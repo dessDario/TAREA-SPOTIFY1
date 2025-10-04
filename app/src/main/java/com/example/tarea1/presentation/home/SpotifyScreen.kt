@@ -33,15 +33,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.example.tarea1.presentation.data.model.Info
-import com.example.tarea1.presentation.data.model.PlayList
+import com.example.tarea1.presentation.data.model.* // <-- importa ArtistModel, SongModel, AlbumModel, AlbumType, Info, PlayList y mappers
 
-/* ---------- PALETA ---------- */
+/* ---------- PALETA colores chi */
 private val BgTop = Color(0xFF181818)
 private val BgBottom = Color(0xFF0E0E0E)
 private val TextPrimary = Color(0xFFFFFFFF)
@@ -49,30 +46,36 @@ private val TextSecondary = Color(0xFFB3B3B3)
 private val DividerGray = Color(0xFF2A2A2A)
 private val SpotifyGreen = Color(0xFF1DB954)
 
-/* Alturas base para cálculos */
 private val MINI_PLAYER_HEIGHT = 56.dp
-private val BOTTOM_BAR_HEIGHT = 80.dp // altura de NavigationBar en Material3
+private val BOTTOM_BAR_HEIGHT = 80.dp
 
-/* ---------- DATA: Dua Lipa (URLs que siempre responden) ---------- */
-private const val DUA_AVATAR = "https://picsum.photos/seed/dua-avatar/200"
-private const val DUA_COVER  = "https://picsum.photos/seed/dua-cover/900/600"
-
-private fun demoDuaLipa() = PlayList(
-    title = "Best of Dua Lipa",
-    subtitle = "Pop bangers & viral hits from Dua.",
-    coverUrl = DUA_COVER,
-    tracks = listOf(
-        Info("Training Season", "Dua Lipa", "https://picsum.photos/seed/training-season/300"),
-        Info("Houdini", "Dua Lipa", "https://picsum.photos/seed/houdini/300"),
-        Info("Illusion", "Dua Lipa", "https://picsum.photos/seed/illusion/300"),
-        Info("Dance The Night", "Dua Lipa", "https://picsum.photos/seed/dance-the-night/300"),
-        Info("Levitating", "Dua Lipa", "https://picsum.photos/seed/levitating/300"),
-        Info("New Rules", "Dua Lipa", "https://picsum.photos/seed/new-rules/300"),
-        Info("Physical", "Dua Lipa", "https://picsum.photos/seed/physical/300"),
-    )
+/* ---------- MOCKS  ---------- */
+private val mockArtist = ArtistModel(
+    id = "art_dua",
+    name = "Dua Lipa",
+    avatarUrl = "https://picsum.photos/seed/dua-avatar/200",
+    headerImageUrl = "https://picsum.photos/seed/dua-cover/900/600",
+    monthlyListeners = "45.1M monthly listeners",
+    verified = true
 )
 
-/* ---------- ENTRADA ÚNICA ---------- */
+private val mockSongs: List<SongModel> = listOf(
+    SongModel("s1","Training Season", listOf("Dua Lipa"),"Radical Optimism","https://picsum.photos/seed/training-season/300","3:29"),
+    SongModel("s2","Houdini",         listOf("Dua Lipa"),"Radical Optimism","https://picsum.photos/seed/houdini/300","3:04"),
+    SongModel("s3","Illusion",        listOf("Dua Lipa"),"Radical Optimism","https://picsum.photos/seed/illusion/300","3:08"),
+    SongModel("s4","Dance The Night", listOf("Dua Lipa"),"Barbie: The Album","https://picsum.photos/seed/dance-the-night/300","2:56"),
+    SongModel("s5","Levitating",      listOf("Dua Lipa"),"Future Nostalgia","https://picsum.photos/seed/levitating/300","3:24"),
+    SongModel("s6","New Rules",       listOf("Dua Lipa"),"Dua Lipa","https://picsum.photos/seed/new-rules/300","3:29"),
+    SongModel("s7","Physical",        listOf("Dua Lipa"),"Future Nostalgia","https://picsum.photos/seed/physical/300","3:13"),
+)
+
+@Suppress("unused")
+private val mockReleases: List<AlbumModel> = listOf(
+    AlbumModel("alb1","Radical Optimism","https://picsum.photos/seed/radical-optimism/400",2024,AlbumType.ALBUM),
+    AlbumModel("alb2","Future Nostalgia","https://picsum.photos/seed/future-nostalgia/400",2020,AlbumType.ALBUM),
+)
+
+/*  ENTRADA ÚNICA  */
 @Composable
 fun SpotifyScreen() {
     val scheme = darkColorScheme(
@@ -81,15 +84,18 @@ fun SpotifyScreen() {
         surface = BgBottom
     )
     MaterialTheme(colorScheme = scheme) {
+        // Adaptamos los mocks a tu UI (PlayList/Info) con el mapper
+        val playlist = remember { mockArtist.toPlayList(mockSongs) }
+
         OnePlaylistScreen(
-            playlist = remember { demoDuaLipa() },
+            playlist = playlist,
             onPlay = {},
             onTrackClick = {}
         )
     }
 }
 
-/* ---------- SCREEN ---------- */
+/* SCREEN  */
 @Composable
 fun OnePlaylistScreen(
     playlist: PlayList,
@@ -97,7 +103,6 @@ fun OnePlaylistScreen(
     onTrackClick: (Info) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // padding adicional igual al alto real de los gestos del sistema
     val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Box(
@@ -107,7 +112,6 @@ fun OnePlaylistScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            // deja espacio para mini-player + bottom bar + insets
             contentPadding = PaddingValues(
                 bottom = MINI_PLAYER_HEIGHT + BOTTOM_BAR_HEIGHT + navInset + 16.dp
             )
@@ -117,7 +121,7 @@ fun OnePlaylistScreen(
                     title = playlist.title,
                     subtitle = playlist.subtitle,
                     coverUrl = playlist.coverUrl,
-                    artistAvatarUrl = DUA_AVATAR,
+                    artistAvatarUrl = mockArtist.avatarUrl, // avatar desde el modelo del paquete
                     onPlay = onPlay
                 )
             }
@@ -130,14 +134,12 @@ fun OnePlaylistScreen(
             item { Spacer(Modifier.height(16.dp)) }
         }
 
-        // Bottom bar anclada abajo (NavigationBar maneja insets automáticamente)
         BottomNavBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         )
 
-        // Mini-player encima de la bottom bar + insets
         MiniPlayerBar(
             title = "Dreamer",
             artist = "Martin Garrix",
@@ -156,7 +158,7 @@ fun OnePlaylistScreen(
     }
 }
 
-/* ---------- PARTES UI ---------- */
+/*  PARTES UI  */
 @Composable
 private fun Header(
     title: String,
@@ -166,7 +168,6 @@ private fun Header(
     onPlay: () -> Unit
 ) {
     Column {
-        // Imagen grande con overlay
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -342,7 +343,6 @@ private fun BottomNavBar(modifier: Modifier = Modifier, selectedIndex: Int = 0) 
         modifier = modifier,
         containerColor = Color(0xFF121212),
         tonalElevation = 2.dp
-        // OJO: NavigationBar ya maneja WindowInsets.navigationBars
     ) {
         NavigationBarItem(
             selected = selectedIndex == 0,
